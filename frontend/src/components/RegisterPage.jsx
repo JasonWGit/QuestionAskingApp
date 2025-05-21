@@ -2,15 +2,19 @@ import { Box, TextField, Typography, Button, Link  } from '@mui/material';
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from './PageContainer';
+import { supabase } from '../supabase.js';
+import { useAlert } from './AlertContext.jsx';
 
 export default function RegisterPage() {
-  const [registerFormData, setRegisterFormData] = useState({
+  const { showSuccessAlert, showErrorAlert } = useAlert();
+
+  const initialRegisterFormState = {
     email: { value: '', label: 'Email', error: false, helperText: ''},
     username: { value: '', label: 'Username', error: false, helperText: ''},
     password: { value: '', label: 'Password', error: false, helperText: ''},
     confirmPassword: { value: '', label: 'Confirm Password', error: false, helperText: ''},
-
-  });
+  };
+  const [registerFormData, setRegisterFormData] = useState(initialRegisterFormState);
 
   const handleInputChange = (event) => {
     setRegisterFormData(prevData => {
@@ -79,6 +83,10 @@ export default function RegisterPage() {
     }
   }
 
+  const clearRegisterForm = () => {
+    setRegisterFormData(initialRegisterFormState);
+  }
+
   const handleClickRegisterBtn = (event) => {
     event.preventDefault();
 
@@ -94,13 +102,65 @@ export default function RegisterPage() {
     if (errorFound) {
       return;
     }
+
+    registerNewUser();
   }
+
+  const registerNewUser = async () => {
+    const { data: existingUser } = await supabase.from("profiles")
+    .select("id")
+    .eq("username", registerFormData.username.value);
+
+    if (existingUser.length > 0) {
+      showErrorAlert('That username is already taken. Please pick another');
+      return;
+    }
+
+    // const {data: signupData, error: signupError } = await supabase.auth.signUp({
+    //   email: registerFormData.email.value,
+    //   password: registerFormData.password.value,
+    //   options: {
+    //     auth: { autoSignIn: false }
+    //   }
+    // })
+
+    const { data: signupData, error: signupError } = await supabase.functions.invoke('createNewUser', {
+      body: {
+        email: registerFormData.email.value,
+        password: registerFormData.password.value,
+      },
+      headers: {
+        'x-no-auth': 'true'
+      }
+    })
+
+    console.log(signupData);
+
+    if (signupError) {
+      showErrorAlert(`${signupError.code}: ${signupError.message}`);
+      return;
+    }
+    
+    const { data, error: insertProfileError } = await supabase.from('profiles').insert([{ 
+      id: signupData.data.user.id,
+      username: registerFormData.username.value
+    }]);
+
+    if (insertProfileError) {
+      showErrorAlert(`${insertProfileError.code}: ${insertProfileError.message}`);
+      return;
+    }
+
+    showSuccessAlert('success registered new user');
+    clearRegisterForm();
+  }
+
 
   return (
     <>
       <PageContainer>
         <Typography variant="h4">Register A New Account</Typography>
-        <Box component="form" sx={{mt: 3, display: 'flex', flexDirection: 'column', gap: 2}}>
+        <Box component="form" sx={{mt: 3, display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center'}}>
           {Object.entries(registerFormData).map(([inputName, data]) => 
             <TextField
               name={inputName}
@@ -114,6 +174,7 @@ export default function RegisterPage() {
             </TextField>
           )}
           <Button type="submit" variant="outlined" onClick={handleClickRegisterBtn}>Register</Button>
+          <Link sx={{textDecoration: 'none'}}href="/"><Typography>Already have an account?</Typography></Link>
         </Box>
       </PageContainer>
     </>
