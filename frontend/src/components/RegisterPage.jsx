@@ -107,11 +107,8 @@ export default function RegisterPage() {
   }
 
   const registerNewUser = async () => {
-    const { data: existingUser } = await supabase.from("profiles")
-    .select("id")
-    .eq("username", registerFormData.username.value);
-
-    if (existingUser.length > 0) {
+    const { data: usernameExists, error } = await supabase.rpc('check_username_exists', { input_username: registerFormData.username.value });
+    if (usernameExists) {
       showErrorAlert('That username is already taken. Please pick another');
       return;
     }

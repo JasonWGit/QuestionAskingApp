@@ -2,13 +2,16 @@ import { Box, TextField, Typography, Button, Link  } from '@mui/material';
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from './PageContainer';
+import { useAlert } from './AlertContext.jsx'; 
 import { supabase } from '../supabase';
 
 export default function LoginPage() {
+  const { showSuccessAlert, showErrorAlert } = useAlert();
   const [loginFormData, setLoginFormData] = useState({
     email: { value: '', error: false, helperText: ''},
     password: { value: '', error: false, helperText: '' },
   });
+  const navigate = useNavigate();
 
   const handleFormChange = (event) => {
     setLoginFormData(prevLoginFormData => {
@@ -17,7 +20,7 @@ export default function LoginPage() {
     });
   }
 
-  const handleClickLoginBtn = (event) => {
+  const handleClickLoginBtn = async (event) => {
     event.preventDefault();
 
     let errorFound = false;
@@ -27,11 +30,27 @@ export default function LoginPage() {
     if (errorFound) {
       return;
     }
-
+    
+    await loginUser();
   }
 
   const loginUser = async () => {
-    const { data, error } = await supabase.auth.signInWithPassword({})
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginFormData.email.value,
+      password: loginFormData.password.value,
+    });
+
+    if (error) {
+      if (error.code === "invalid_credentials") {
+        showErrorAlert(`Incorrect username or password, please try again`);
+        return;
+      }
+      showErrorAlert(`${error.code}: ${error.messsage}`);
+      return;
+    }
+    console.log(data);
+    showSuccessAlert('Successfully logged in');
+    navigate('/dashboard');
   }
 
   const validateFormInput = (inputName) => {
