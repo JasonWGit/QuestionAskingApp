@@ -50,6 +50,7 @@ export default function LoginPage() {
     }
     console.log(data);
     showSuccessAlert('Successfully logged in');
+    // probably fetch the users role here from the profiles table and conditionally navigate them to either the normal dashboard or the admin dashboard
     navigate('/dashboard');
   }
 
