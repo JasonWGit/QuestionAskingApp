@@ -98,7 +98,7 @@ export default function RegisterPage() {
       errorFound = !validateFormInput(inputName);
     }
 
-    
+
     if (errorFound) {
       return;
     }

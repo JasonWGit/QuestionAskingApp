@@ -48,7 +48,7 @@ export default function LoginPage() {
       showErrorAlert(`${error.code}: ${error.messsage}`);
       return;
     }
-    console.log(data);
+    // console.log(data);
     showSuccessAlert('Successfully logged in');
     // probably fetch the users role here from the profiles table and conditionally navigate them to either the normal dashboard or the admin dashboard
     navigate('/dashboard');
@@ -71,7 +71,7 @@ export default function LoginPage() {
     return true;
   }
 
-    
+
 
   return (
     <>

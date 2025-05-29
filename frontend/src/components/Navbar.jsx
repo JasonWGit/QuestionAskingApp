@@ -1,4 +1,4 @@
-import { Box, TextField, Typography, Button, Link, AppBar, Toolbar } from '@mui/material';
+import { Box, TextField, Typography, Button, Link, AppBar, Toolbar, darken } from '@mui/material';
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from './PageContainer';
@@ -38,10 +38,14 @@ export default function Navbar() {
     }
   }
 
+  const handleClickLogo = () => {
+    navigate('/dashboard');
+  }
+
   return (
     <AppBar position="static">
-      <Toolbar sx={{display: 'flex', justifyContent: 'space-between'}}>
-        <Typography>
+      <Toolbar sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <Typography sx={{display: 'flex', alignItems: 'center', cursor: 'pointer', height: '75%', px: 2, borderRadius: 15, '&:hover': { backgroundColor: darken('#1976d2', 0.1),  }}} onClick={handleClickLogo}>
           Question Asking App
         </Typography>
         {loginSession && <Button variant="outlined" color="inherit" onClick={handleClickLogout}>
