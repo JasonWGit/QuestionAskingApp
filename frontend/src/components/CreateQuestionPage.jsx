@@ -5,6 +5,7 @@ import PageContainer from './PageContainer';
 import { supabase } from '../supabase.js';
 import { useAlert } from './AlertContext.jsx';
 import Navbar from '../components/Navbar';
+import { userLoggedInCheck } from './authHelpers.js';
 
 export default function CreateQuestionPage() {
   const initialCreateQuestionFormState = {
@@ -66,6 +67,13 @@ export default function CreateQuestionPage() {
   }
 
   const handleClickSubmit = async () => {
+    const { data: sessionData, error: sessionError, loggedIn } = await userLoggedInCheck();
+
+    if (!loggedIn) {
+      showErrorAlert(sessionError);
+      return;
+    }
+
     const errorFound = validateFormInput();
     if (errorFound) {
       return;
@@ -73,7 +81,8 @@ export default function CreateQuestionPage() {
     
     const { data, error } = await supabase.from('questions').insert([{
       question_title: createQuestionFormData.questionTitle.value,
-      question_body: createQuestionFormData.questionBody.value
+      question_body: createQuestionFormData.questionBody.value,
+      user_id: sessionData.session.user.id
     }]);
 
     if (error) {

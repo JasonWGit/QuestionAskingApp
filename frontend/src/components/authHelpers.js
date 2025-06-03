@@ -1,0 +1,16 @@
+import { supabase } from '../supabase.js';
+
+// returns object { data, error, loggedIn }
+export const userLoggedInCheck = async () => {
+
+    const { data , error} = await supabase.auth.getSession();
+    if (error) {
+      return { error: 'Error fetching user session', loggedIn: false }; 
+    } 
+
+    if (!data.session) {
+      return { error: 'You must be logged in to perform that action', loggedIn: false };
+    }
+
+    return { data: data, loggedIn: true };
+}
