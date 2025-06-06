@@ -5,10 +5,12 @@ import PageContainer from './PageContainer';
 import { supabase } from '../supabase.js';
 import { useAlert } from './AlertContext.jsx';
 import Navbar from '../components/Navbar';
-import { userLoggedInCheck } from './authHelpers.js';
+import { userLoggedInCheck, getUser } from './authHelpers.js';
+import CommentBox from './CommentBox.jsx';
 
 // params { question_id }
 export default function QuestionPage(props) {
+  getUser();
   const { showErrorAlert, showSuccessAlert } = useAlert();
   const [questionData, setQuestionData] = useState();
   const [answerData, setAnswerData] = useState();
@@ -35,6 +37,11 @@ export default function QuestionPage(props) {
   useEffect(() => {
     const fetchQuestionData = async () => {
       const { data, error } = await supabase.from('questions').select('*').eq('id', params.question_id);
+
+      if (error) {
+        showErrorAlert('Failed to fetch question');
+        return;
+      }
       if (data.length > 0) {
         setQuestionData(data[0]);
       } else {
@@ -44,9 +51,13 @@ export default function QuestionPage(props) {
     }
     
     const fetchAnswerData = async () => {
-      const { data, error } = await supabase.from('question_answers').select('*').eq('question_id', params.question_id);
-      // console.log(data);
+      // const { data, error } = await supabase.from('question_answers').select('*').eq('question_id', params.question_id);
+      const { data, error } = await supabase.rpc('get_question_answer', { target_question_id: params.question_id });
       // setAnswerData(data[0]);
+      if (error) {
+        showErrorAlert('Failed to fetch answer');
+        return;
+      }
       if (data.length > 0) {
         setAnswerData(data[0]);
       }
@@ -133,7 +144,7 @@ export default function QuestionPage(props) {
           
           {answerData && <Box sx={{ mt: 8, border: '3px solid #1f883d', p: 3}}>
             <Typography variant="caption">
-              Answered: {new Date(answerData.created_at).toLocaleString('en-US', {
+              Answered by {answerData.username} on {new Date(answerData.created_at).toLocaleString('en-US', {
                 dateStyle: 'medium', timeStyle: 'short', timeZone: 'Australia/Sydney'
               })}
             </Typography>
@@ -141,14 +152,15 @@ export default function QuestionPage(props) {
               {answerData.answer}
             </Typography>
           </Box>}
-          <Box sx={{ display: 'flex', flexDirection: 'column', mt: 5}}>
+          {/* <Box sx={{ display: 'flex', flexDirection: 'column', mt: 5}}>
             {comments && comments.map(comment => 
               <Typography sx={{ wordBreak: 'break-word' }}>
                 {new Date(comment.created_at).toLocaleString('en-US', {
                 dateStyle: 'medium', timeStyle: 'short', timeZone: 'Australia/Sydney'
               })} <b>{comment.username}</b>: {comment.comment}
               </Typography>)}
-          </Box>
+          </Box> */}
+          {comments && <CommentBox comments={comments}/>}
 
           <Box component="form" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 3}}>
             <TextField 

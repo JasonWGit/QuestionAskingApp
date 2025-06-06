@@ -3,7 +3,7 @@ import { supabase } from '../supabase.js';
 // returns object { data, error, loggedIn }
 export const userLoggedInCheck = async () => {
 
-    const { data , error} = await supabase.auth.getSession();
+    const { data , error } = await supabase.auth.getSession();
     if (error) {
       return { error: 'Error fetching user session', loggedIn: false }; 
     } 
@@ -13,4 +13,16 @@ export const userLoggedInCheck = async () => {
     }
 
     return { data: data, loggedIn: true };
+}
+
+export const getUser = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (!data) {
+    return null;
+  } else {
+    return data;
+  }
+}
+export const canDeleteComment = async () => {
+
 }
