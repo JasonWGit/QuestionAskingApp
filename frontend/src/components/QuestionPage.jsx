@@ -7,6 +7,7 @@ import { useAlert } from './AlertContext.jsx';
 import Navbar from '../components/Navbar';
 import { userLoggedInCheck, getUser } from './authHelpers.js';
 import CommentBox from './CommentBox.jsx';
+import { getUserRole } from './authHelpers.js';
 
 // params { question_id }
 export default function QuestionPage(props) {
@@ -15,6 +16,8 @@ export default function QuestionPage(props) {
   const [questionData, setQuestionData] = useState();
   const [answerData, setAnswerData] = useState();
   const [comments, setComments] = useState();
+  const [userRole, setUserRole] = useState();
+  
 
   const initialCommentFormState = { 
     value: '',
@@ -22,6 +25,7 @@ export default function QuestionPage(props) {
     helperText: ''
   }
   const [commentFormData, setCommentFormData] = useState(initialCommentFormState);
+  const [answerFormData, setAnswerFormData] = useState(initialCommentFormState);
 
   const params = useParams();
   // console.log(params.question_id);
@@ -34,10 +38,8 @@ export default function QuestionPage(props) {
     }
   }
 
-  useEffect(() => {
-    const fetchQuestionData = async () => {
+  const fetchQuestionData = async () => {
       const { data, error } = await supabase.from('questions').select('*').eq('id', params.question_id);
-
       if (error) {
         showErrorAlert('Failed to fetch question');
         return;
@@ -63,9 +65,16 @@ export default function QuestionPage(props) {
       }
     }
 
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const role = await getUserRole();
+      setUserRole(() => role);
+    }
+
     fetchQuestionData();
     fetchAnswerData();
     fetchComments();
+    fetchUserRole();
   }, []);
 
   const handleCommentFormChange = (event) => {
@@ -114,6 +123,54 @@ export default function QuestionPage(props) {
     fetchComments(); // fetch comments again after inserting the new comment so that the new comment appears without needing a page refresh 
   }
 
+  const handleAnswerFormChange = (event) => {
+    setAnswerFormData((prevData) => {
+      return {
+        ...prevData,
+        value: event.target.value,
+        error: false,
+        helperText: ''
+      }
+    });
+  }
+
+  const handleClickSubmitAnswer = async (event) => {
+    event.preventDefault();
+    const { data: sessionData, error: sessionError, loggedIn } = await userLoggedInCheck();
+    if (!loggedIn) {
+      showErrorAlert(sessionError);
+    }
+
+    // probably check here if the question is answered already or not or insert a check in the 
+
+    // also probably check if the question exists or not
+    const {data: questionStatusUpdateData, error: questionStatusUpdateError } = await supabase.from('questions').update({ status: 'Answered' }).eq('id', params.question_id);
+
+    if (questionStatusUpdateError) {
+      showErrorAlert(`${questionStatusUpdateError.code}: ${questionStatusUpdateError.message}`);
+      return;
+    }
+
+    const { data, error } = await supabase.from('question_answers').insert([{
+      question_id: params.question_id,
+      user_id: sessionData.session.user.id,
+      answer: answerFormData.value,
+    }]);
+
+    if (error) {
+      showErrorAlert(`${error.code}: ${error.message}`);
+      return;
+    }
+
+
+
+    setAnswerFormData(initialCommentFormState);
+    showSuccessAlert('Successfully answered question');
+
+    fetchAnswerData();
+    fetchQuestionData();
+  }
+
   return (
     <>
       <Navbar></Navbar>
@@ -160,8 +217,24 @@ export default function QuestionPage(props) {
               })} <b>{comment.username}</b>: {comment.comment}
               </Typography>)}
           </Box> */}
-          {comments && <CommentBox comments={comments}/>}
 
+          {questionData.status === 'Unanswered' && userRole === 'admin' && 
+          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', mt: 3}}> 
+            <TextField
+              label="Provide an answer"
+              multiline
+              fullWidth
+              minRows={1}
+              maxRows={12}
+              onChange={handleAnswerFormChange}
+            ></TextField>
+            <Button type="submit" variant="outlined" sx={{mt: 2, width: '40%', minWidth: 170}} onClick={handleClickSubmitAnswer}>Submit answer</Button>
+          </Box>
+          
+          }
+
+          {comments && <CommentBox comments={comments}/>}
+          
           <Box component="form" sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 3}}>
             <TextField 
               multiline

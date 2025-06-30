@@ -4,45 +4,33 @@ import { useNavigate } from 'react-router-dom';
 import PageContainer from './PageContainer';
 import { supabase } from '../supabase';
 import Navbar from '../components/Navbar';
-import QuestionCard from '../components/QuestionCard.jsx';
+import AdminDashboard from './AdminDashboard';
+import StudentDashboard from './StudentDashboard';
+import { getUserRole } from './authHelpers';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [questionList, setQuestionList] = useState([]);
+  const [userRole, setUserRole] = useState('loading');
 
   useEffect(() => {
-    const fetchQuestions = async () => {
-      const { data, error } = await supabase.from('questions').select('*');
-      setQuestionList(() => data);
+    const fetchRole = async () => {
+      const role = await getUserRole();
+      setUserRole(role);
     }
-    fetchQuestions();
-  }, []);
 
-  const handleClickAskQuestionBtn = () => {
-    navigate('/question/create');
+    fetchRole();
+  }, []);
+  
+  const roleDashboards = {
+    "loading": <>Loading</>, // replace with a generic loading screen
+    "admin": <AdminDashboard />,
+    "user": <StudentDashboard />,
   }
 
   return (
     <>
-      <Navbar></Navbar>
-      <Typography variant="h3" sx={{fontStyle: 'italic', ml: 3, mt: 3}}>Dashboard</Typography>
-      <Button sx={{ backgroundColor: 'lightgrey', mx: 3}} 
-        onClick={handleClickAskQuestionBtn}
-      >Ask a new question</Button>
-      <Box sx={{p: 3}}>
-        <Typography variant="h4">
-          Your Questions
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', backgroundColor: 'lightblue', px: 2, py: 2, borderRadius: '15px', maxWidth: 500, minWidth: 400, minHeight: 200}}>
-          {questionList.map(question => <QuestionCard
-            questionId={question.id}
-            questionTitle={question.question_title}
-            questionStatus={question.status}
-          />
-          )}
-        </Box>
-      </Box>
+      {roleDashboards[userRole]}
     </>
-    
   )
 }

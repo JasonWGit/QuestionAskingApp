@@ -26,7 +26,7 @@ export default function CommentBox(props) {
           <Typography sx={{ wordBreak: 'break-word' }}>
             {new Date(comment.created_at).toLocaleString('en-US', {
             dateStyle: 'medium', timeStyle: 'short', timeZone: 'Australia/Sydney'
-          })} <b>{comment.username}</b>: {comment.comment} + {comment.user_id === user && 'can delete'}
+          })} <b>{comment.username}</b>: {comment.comment} {comment.user_id === user && '-can delete-'}
           </Typography>)}
       </Box>
     </>

@@ -23,6 +23,24 @@ export const getUser = async () => {
     return data;
   }
 }
+
+// returns object { role, error }
+export const getUserRole = async () => {
+  const userData = await getUser();
+  if (userData == null) {
+    return;
+  }
+
+  const { data, error } = await supabase.from('profiles').select('role').eq('id', userData?.user?.id);
+
+
+  if (!data) {
+    return null;
+  } else {
+    return data[0].role;
+  }
+}
+
 export const canDeleteComment = async () => {
 
 }
